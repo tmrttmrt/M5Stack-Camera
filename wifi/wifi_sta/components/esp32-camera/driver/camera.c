@@ -962,7 +962,7 @@ esp_err_t camera_probe(const camera_config_t* config, camera_model_t* out_camera
     SCCB_Init(config->pin_sscb_sda, config->pin_sscb_scl);
 	
     if(config->pin_pwdn >= 0) {
-        ESP_LOGD(TAG, "Resetting camera by power down line");
+        ESP_LOGI(TAG, "Resetting camera by power down line");
         gpio_config_t conf = { 0 };
         conf.pin_bit_mask = 1LL << config->pin_pwdn;
         conf.mode = GPIO_MODE_OUTPUT;
@@ -976,7 +976,7 @@ esp_err_t camera_probe(const camera_config_t* config, camera_model_t* out_camera
     }
 
     if(config->pin_reset >= 0) {
-        ESP_LOGD(TAG, "Resetting camera");
+        ESP_LOGI(TAG, "Resetting camera");
         gpio_config_t conf = { 0 };
         conf.pin_bit_mask = 1LL << config->pin_reset;
         conf.mode = GPIO_MODE_OUTPUT;
@@ -988,25 +988,26 @@ esp_err_t camera_probe(const camera_config_t* config, camera_model_t* out_camera
         vTaskDelay(10 / portTICK_PERIOD_MS);
     }
 
-    ESP_LOGD(TAG, "Searching for camera address");
+    ESP_LOGI(TAG, "Searching for camera address");
     vTaskDelay(10 / portTICK_PERIOD_MS);
     uint8_t slv_addr = SCCB_Probe();
     if (slv_addr == 0) {
+        ESP_LOGE(TAG, "Camera address not found");
         *out_camera_model = CAMERA_NONE;
         camera_disable_out_clock();
         return ESP_ERR_CAMERA_NOT_DETECTED;
     }
     
     //slv_addr = 0x30;
-    ESP_LOGD(TAG, "Detected camera at address=0x%02x", slv_addr);
+    ESP_LOGI(TAG, "Detected camera at address=0x%02x", slv_addr);
     sensor_id_t* id = &s_state->sensor.id;
 
 #if CONFIG_OV2640_SUPPORT
     if (slv_addr == 0x30) {
         ESP_LOGD(TAG, "Resetting OV2640");
         //camera might be OV2640. try to reset it
-        SCCB_Write(0x30, 0xFF, 0x01);//bank sensor
-        SCCB_Write(0x30, 0x12, 0x80);//reset
+        SCCB_Write(slv_addr, 0xFF, 0x01);//bank sensor
+        SCCB_Write(slv_addr, 0x12, 0x80);//reset
         vTaskDelay(10 / portTICK_PERIOD_MS);
         slv_addr = SCCB_Probe();
     }
@@ -1020,7 +1021,7 @@ esp_err_t camera_probe(const camera_config_t* config, camera_model_t* out_camera
         id->PID = SCCB_Read16(s_state->sensor.slv_addr, REG16_CHIDH);
         id->VER = SCCB_Read16(s_state->sensor.slv_addr, REG16_CHIDL);
         vTaskDelay(10 / portTICK_PERIOD_MS);
-        ESP_LOGD(TAG, "Camera PID=0x%02x VER=0x%02x", id->PID, id->VER);
+        ESP_LOGI(TAG, "Camera PID=0x%02x VER=0x%02x", id->PID, id->VER);
     } else {
 #endif
         id->PID = SCCB_Read(s_state->sensor.slv_addr, REG_PID);
@@ -1028,7 +1029,7 @@ esp_err_t camera_probe(const camera_config_t* config, camera_model_t* out_camera
         id->MIDL = SCCB_Read(s_state->sensor.slv_addr, REG_MIDL);
         id->MIDH = SCCB_Read(s_state->sensor.slv_addr, REG_MIDH);
         vTaskDelay(10 / portTICK_PERIOD_MS);
-        ESP_LOGD(TAG, "Camera PID=0x%02x VER=0x%02x MIDL=0x%02x MIDH=0x%02x",
+        ESP_LOGI(TAG, "Camera PID=0x%02x VER=0x%02x MIDL=0x%02x MIDH=0x%02x",
                  id->PID, id->VER, id->MIDH, id->MIDL);
 
 #if (CONFIG_OV3660_SUPPORT || CONFIG_OV5640_SUPPORT)

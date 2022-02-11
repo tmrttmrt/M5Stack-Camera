@@ -15,6 +15,8 @@ config M5_CAMERA_X_BOARD
     bool "M5-Camera X"
 config M5_CAMERA_F_BOARD
     bool "M5-Camera F"
+config AITH_ESP32_CAM_BOARD
+    bool "AiThinker-ESP32-Cam"    
 endchoice
 
 endmenu
